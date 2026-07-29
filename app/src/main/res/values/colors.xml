@@ -11,4 +11,5 @@
     <color name="run_screen_primary_text">#FF000000</color>
     <color name="run_screen_secondary_text">#FF667085</color>
     <color name="run_screen_title">#FF0A4DFF</color>
+    <color name="map_placeholder_background">#FFEAF2F8</color>
 </resources>
