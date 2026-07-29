@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="runr_blue">#0A4DFF</color>
+    <color name="runr_red">#F04438</color>
+    <color name="start_run_button">#FFFFFFFF</color>
+    <color name="start_run_button_pressed">#FFE7ECF3</color>
+    <color name="start_run_button_text">#FF000000</color>
+    <color name="run_screen_background">#FFFFFFFF</color>
+    <color name="run_screen_primary_text">#FF000000</color>
+    <color name="run_screen_secondary_text">#FF667085</color>
+    <color name="run_screen_title">#FF0A4DFF</color>
+</resources>
