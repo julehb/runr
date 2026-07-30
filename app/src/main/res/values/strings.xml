@@ -9,4 +9,6 @@
     <string name="location_accuracy">GPS accuracy: %.0f m</string>
     <string name="location_coordinates">Lat: %1$.5f\nLon: %2$.5f</string>
     <string name="distance_kilometers">%.2f km</string>
+    <string name="current_location_marker_title">Current location</string>
+    <string name="map_attribution">© OpenStreetMap contributors</string>
 </resources>
