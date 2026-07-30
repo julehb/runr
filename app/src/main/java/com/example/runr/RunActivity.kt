@@ -26,6 +26,7 @@ class RunActivity : AppCompatActivity() {
     private lateinit var elapsedTimeChronometer: Chronometer
     private lateinit var pauseRunButton: AppCompatButton
     private lateinit var resetRunButton: AppCompatButton
+    private lateinit var stopRunButton: AppCompatButton
     private lateinit var locationStatusText: TextView
     private lateinit var locationCoordinatesText: TextView
     private lateinit var distanceText: TextView
@@ -48,7 +49,7 @@ class RunActivity : AppCompatActivity() {
 
     private val simulatedRunStep = object : Runnable {
         override fun run() {
-            if (!isSimulatedRunActive || simulatedRunPointIndex >= SIMULATED_RUN_POINTS.size) {
+            if (!isSimulatedRunActive) {
                 isSimulatedRunActive = false
                 return
             }
@@ -58,7 +59,7 @@ class RunActivity : AppCompatActivity() {
                 return
             }
 
-            val point = SIMULATED_RUN_POINTS[simulatedRunPointIndex]
+            val point = SIMULATED_RUN_POINTS[simulatedRunPointIndex % SIMULATED_RUN_POINTS.size]
             onLocationUpdated(
                 Location(SIMULATED_LOCATION_PROVIDER).apply {
                     latitude = point.latitude
@@ -93,6 +94,7 @@ class RunActivity : AppCompatActivity() {
         elapsedTimeChronometer = findViewById(R.id.elapsedTimeChronometer)
         pauseRunButton = findViewById(R.id.pauseRunButton)
         resetRunButton = findViewById(R.id.resetRunButton)
+        stopRunButton = findViewById(R.id.stopRunButton)
         locationStatusText = findViewById(R.id.locationStatusText)
         locationCoordinatesText = findViewById(R.id.locationCoordinatesText)
         distanceText = findViewById(R.id.distanceText)
@@ -126,6 +128,7 @@ class RunActivity : AppCompatActivity() {
         }
         pauseRunButton.setOnClickListener { toggleTimer() }
         resetRunButton.setOnClickListener { resetRun() }
+        stopRunButton.setOnClickListener { stopRun() }
         updateDistanceText()
         updatePaceText()
     }
@@ -310,7 +313,6 @@ class RunActivity : AppCompatActivity() {
 
         routePoints.clear()
         routeLine.setPoints(routePoints)
-        resetSimulatedRunIfFinished()
 
         lastAcceptedLocation?.let { location ->
             updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = false)
@@ -323,6 +325,10 @@ class RunActivity : AppCompatActivity() {
         }
         updateDistanceText()
         updatePaceText()
+    }
+
+    private fun stopRun() {
+        toggleTimer()
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -383,17 +389,6 @@ class RunActivity : AppCompatActivity() {
         updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = routePoints.isEmpty())
     }
 
-    private fun resetSimulatedRunIfFinished() {
-        if (IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT &&
-            simulatedRunPointIndex >= SIMULATED_RUN_POINTS.size
-        ) {
-            simulatedRunPointIndex = 0
-            if (!isSimulatedRunActive) {
-                startSimulatedRun()
-            }
-        }
-    }
-
     private fun isPlausibleRunSegment(previousLocation: Location, location: Location): Boolean {
         val elapsedSeconds = (location.time - previousLocation.time) / 1_000f
         if (elapsedSeconds <= 0f) return false
@@ -414,10 +409,14 @@ class RunActivity : AppCompatActivity() {
     }
 
     private fun updateDistanceText() {
-        distanceText.text = getString(
-            R.string.distance_kilometers,
-            totalDistanceMeters / METERS_PER_KILOMETER,
-        )
+        distanceText.text = if (totalDistanceMeters < METERS_PER_KILOMETER) {
+            getString(R.string.distance_meters, totalDistanceMeters.toInt())
+        } else {
+            getString(
+                R.string.distance_kilometers,
+                totalDistanceMeters / METERS_PER_KILOMETER,
+            )
+        }
     }
 
     private fun updatePaceText() {
@@ -495,7 +494,7 @@ class RunActivity : AppCompatActivity() {
         private const val SIMULATED_LOCATION_PROVIDER = "simulated"
         private const val SIMULATED_LOCATION_ACCURACY_METERS = 8f
         private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 1_000L
-        private const val SIMULATED_RUN_DURATION_MILLIS = 5 * 60 * MILLIS_PER_SECOND
+        private const val SIMULATED_RUN_PACE_SECONDS_PER_KILOMETER = 5 * SECONDS_PER_MINUTE
         private const val MIN_MAP_ZOOM = 3.0
         private const val MAX_MAP_ZOOM = 20.0
         private const val DEFAULT_MAP_ZOOM = 16.0
@@ -524,19 +523,23 @@ class RunActivity : AppCompatActivity() {
                 distanceBetween(start, end)
             }
             val routeDistanceMeters = segmentDistances.sum()
-            val stepCount = (SIMULATED_RUN_DURATION_MILLIS / SIMULATED_RUN_UPDATE_INTERVAL_MILLIS).toInt()
+            val metersPerStep = METERS_PER_KILOMETER /
+                SIMULATED_RUN_PACE_SECONDS_PER_KILOMETER *
+                (SIMULATED_RUN_UPDATE_INTERVAL_MILLIS.toFloat() / MILLIS_PER_SECOND)
+            val stepCount = (routeDistanceMeters / metersPerStep).toInt().coerceAtLeast(1)
 
-            return (0..stepCount).map { step ->
-                val targetDistanceMeters = routeDistanceMeters * step / stepCount
-                interpolateRoutePoint(segmentDistances, targetDistanceMeters)
+            return (0 until stepCount).map { step ->
+                val targetDistanceMeters = metersPerStep * step
+                interpolateRoutePoint(segmentDistances, routeDistanceMeters, targetDistanceMeters)
             }
         }
 
         private fun interpolateRoutePoint(
             segmentDistances: List<Float>,
+            routeDistanceMeters: Float,
             targetDistanceMeters: Float,
         ): GeoPoint {
-            var remainingDistanceMeters = targetDistanceMeters
+            var remainingDistanceMeters = targetDistanceMeters % routeDistanceMeters
             SIMULATED_ROUTE_CORNERS.zipWithNext().forEachIndexed { index, (start, end) ->
                 val segmentDistanceMeters = segmentDistances[index]
                 if (remainingDistanceMeters <= segmentDistanceMeters) {
