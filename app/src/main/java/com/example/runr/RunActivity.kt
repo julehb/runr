@@ -25,6 +25,7 @@ import org.osmdroid.views.overlay.Polyline
 class RunActivity : AppCompatActivity() {
     private lateinit var elapsedTimeChronometer: Chronometer
     private lateinit var pauseRunButton: AppCompatButton
+    private lateinit var resetRunButton: AppCompatButton
     private lateinit var locationStatusText: TextView
     private lateinit var locationCoordinatesText: TextView
     private lateinit var distanceText: TextView
@@ -40,6 +41,8 @@ class RunActivity : AppCompatActivity() {
     private var pausedAtElapsedRealtime = 0L
     private var shouldAnchorNextLocation = false
     private var totalDistanceMeters = 0f
+    private var hasCenteredMapOnRunLocation = false
+    private var lastMapCameraMoveElapsedRealtime = 0L
     private val routePoints = mutableListOf<GeoPoint>()
     private val simulatedRunHandler = Handler(Looper.getMainLooper())
     private var simulatedRunPointIndex = 0
@@ -49,6 +52,11 @@ class RunActivity : AppCompatActivity() {
         override fun run() {
             if (!isSimulatedRunActive || simulatedRunPointIndex >= SIMULATED_RUN_POINTS.size) {
                 isSimulatedRunActive = false
+                return
+            }
+
+            if (!isTimerRunning) {
+                simulatedRunHandler.postDelayed(this, SIMULATED_RUN_UPDATE_INTERVAL_MILLIS)
                 return
             }
 
@@ -86,6 +94,7 @@ class RunActivity : AppCompatActivity() {
 
         elapsedTimeChronometer = findViewById(R.id.elapsedTimeChronometer)
         pauseRunButton = findViewById(R.id.pauseRunButton)
+        resetRunButton = findViewById(R.id.resetRunButton)
         locationStatusText = findViewById(R.id.locationStatusText)
         locationCoordinatesText = findViewById(R.id.locationCoordinatesText)
         distanceText = findViewById(R.id.distanceText)
@@ -118,6 +127,7 @@ class RunActivity : AppCompatActivity() {
             updatePauseButtonText()
         }
         pauseRunButton.setOnClickListener { toggleTimer() }
+        resetRunButton.setOnClickListener { resetRun() }
         updateDistanceText()
         updatePaceText()
     }
@@ -293,6 +303,35 @@ class RunActivity : AppCompatActivity() {
         pauseRunButton.setText(if (isTimerRunning) R.string.pause_run else R.string.resume_run)
     }
 
+    private fun resetRun() {
+        val resetTime = SystemClock.elapsedRealtime()
+        elapsedTimeChronometer.base = resetTime
+        pausedAtElapsedRealtime = resetTime
+        totalDistanceMeters = 0f
+        shouldAnchorNextLocation = true
+
+        routePoints.clear()
+        routeLine.setPoints(routePoints)
+        resetSimulatedRunIfFinished()
+
+        lastAcceptedLocation?.let { location ->
+            updateMap(
+                location,
+                lastMovementBearingDegrees,
+                shouldAddRoutePoint = false,
+                forceMoveCamera = true,
+            )
+        } ?: mapView.invalidate()
+
+        if (isTimerRunning) {
+            elapsedTimeChronometer.start()
+        } else {
+            elapsedTimeChronometer.stop()
+        }
+        updateDistanceText()
+        updatePaceText()
+    }
+
     private fun hasLocationPermission(): Boolean {
         val fineLocationPermission = ContextCompat.checkSelfPermission(
             this,
@@ -348,7 +387,18 @@ class RunActivity : AppCompatActivity() {
         lastAcceptedLocation = location
         shouldAnchorNextLocation = false
         updateLocationText(location)
-        updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = false)
+        updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = routePoints.isEmpty())
+    }
+
+    private fun resetSimulatedRunIfFinished() {
+        if (IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT &&
+            simulatedRunPointIndex >= SIMULATED_RUN_POINTS.size
+        ) {
+            simulatedRunPointIndex = 0
+            if (!isSimulatedRunActive) {
+                startSimulatedRun()
+            }
+        }
     }
 
     private fun isPlausibleRunSegment(previousLocation: Location, location: Location): Boolean {
@@ -398,6 +448,7 @@ class RunActivity : AppCompatActivity() {
         location: Location?,
         movementBearingDegrees: Float,
         shouldAddRoutePoint: Boolean = true,
+        forceMoveCamera: Boolean = false,
     ) {
         if (location == null) return
 
@@ -409,8 +460,24 @@ class RunActivity : AppCompatActivity() {
 
         currentLocationMarker.position = geoPoint
         currentLocationMarker.rotation = toMarkerRotation(movementBearingDegrees)
-        mapView.controller.animateTo(geoPoint)
+        if (shouldMoveMapCamera(forceMoveCamera)) {
+            mapView.controller.animateTo(geoPoint)
+        }
         mapView.invalidate()
+    }
+
+    private fun shouldMoveMapCamera(forceMoveCamera: Boolean): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        if (forceMoveCamera ||
+            !hasCenteredMapOnRunLocation ||
+            now - lastMapCameraMoveElapsedRealtime >= MAP_CAMERA_FOLLOW_INTERVAL_MILLIS
+        ) {
+            hasCenteredMapOnRunLocation = true
+            lastMapCameraMoveElapsedRealtime = now
+            return true
+        }
+
+        return false
     }
 
     private fun toMarkerRotation(movementBearingDegrees: Float): Float {
@@ -451,35 +518,22 @@ class RunActivity : AppCompatActivity() {
         private const val IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT = true
         private const val SIMULATED_LOCATION_PROVIDER = "simulated"
         private const val SIMULATED_LOCATION_ACCURACY_METERS = 8f
-        private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 15_000L
+        private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 1_000L
+        private const val SIMULATED_RUN_DURATION_MILLIS = 5 * 60 * MILLIS_PER_SECOND
+        private const val MAP_CAMERA_FOLLOW_INTERVAL_MILLIS = 5_000L
         private const val MIN_MAP_ZOOM = 3.0
         private const val MAX_MAP_ZOOM = 20.0
         private const val DEFAULT_MAP_ZOOM = 16.0
         private const val ROUTE_LINE_WIDTH = 8f
         private val DEFAULT_MAP_CENTER = GeoPoint(52.52, 13.405)
-        private val SIMULATED_RUN_POINTS = listOf(
+        private val SIMULATED_ROUTE_CORNERS = listOf(
             GeoPoint(52.519102, 13.402786),
-            GeoPoint(52.519102, 13.403524),
-            GeoPoint(52.519102, 13.404262),
-            GeoPoint(52.519102, 13.405000),
-            GeoPoint(52.519102, 13.405738),
-            GeoPoint(52.519102, 13.406476),
             GeoPoint(52.519102, 13.407214),
-            GeoPoint(52.519551, 13.407214),
-            GeoPoint(52.520000, 13.407214),
-            GeoPoint(52.520449, 13.407214),
             GeoPoint(52.520898, 13.407214),
-            GeoPoint(52.520898, 13.406476),
-            GeoPoint(52.520898, 13.405738),
-            GeoPoint(52.520898, 13.405000),
-            GeoPoint(52.520898, 13.404262),
-            GeoPoint(52.520898, 13.403524),
             GeoPoint(52.520898, 13.402786),
-            GeoPoint(52.520449, 13.402786),
-            GeoPoint(52.520000, 13.402786),
-            GeoPoint(52.519551, 13.402786),
             GeoPoint(52.519102, 13.402786),
         )
+        private val SIMULATED_RUN_POINTS = buildSimulatedRunPoints()
         private val OPEN_STREET_MAP_TILE_SOURCE = XYTileSource(
             "OpenStreetMap",
             0,
@@ -489,5 +543,50 @@ class RunActivity : AppCompatActivity() {
             arrayOf("https://tile.openstreetmap.org/"),
             "OpenStreetMap contributors",
         )
+
+        private fun buildSimulatedRunPoints(): List<GeoPoint> {
+            val segmentDistances = SIMULATED_ROUTE_CORNERS.zipWithNext { start, end ->
+                distanceBetween(start, end)
+            }
+            val routeDistanceMeters = segmentDistances.sum()
+            val stepCount = (SIMULATED_RUN_DURATION_MILLIS / SIMULATED_RUN_UPDATE_INTERVAL_MILLIS).toInt()
+
+            return (0..stepCount).map { step ->
+                val targetDistanceMeters = routeDistanceMeters * step / stepCount
+                interpolateRoutePoint(segmentDistances, targetDistanceMeters)
+            }
+        }
+
+        private fun interpolateRoutePoint(
+            segmentDistances: List<Float>,
+            targetDistanceMeters: Float,
+        ): GeoPoint {
+            var remainingDistanceMeters = targetDistanceMeters
+            SIMULATED_ROUTE_CORNERS.zipWithNext().forEachIndexed { index, (start, end) ->
+                val segmentDistanceMeters = segmentDistances[index]
+                if (remainingDistanceMeters <= segmentDistanceMeters) {
+                    val progress = remainingDistanceMeters / segmentDistanceMeters
+                    return GeoPoint(
+                        start.latitude + (end.latitude - start.latitude) * progress,
+                        start.longitude + (end.longitude - start.longitude) * progress,
+                    )
+                }
+                remainingDistanceMeters -= segmentDistanceMeters
+            }
+
+            return SIMULATED_ROUTE_CORNERS.last()
+        }
+
+        private fun distanceBetween(start: GeoPoint, end: GeoPoint): Float {
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                start.latitude,
+                start.longitude,
+                end.latitude,
+                end.longitude,
+                result,
+            )
+            return result[0]
+        }
     }
 }

@@ -72,10 +72,33 @@
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="@null"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/resetRunButton"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/elapsedTimeChronometer" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/resetRunButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minWidth="132dp"
+            android:minHeight="44dp"
+            android:background="@drawable/start_run_button_background"
+            android:backgroundTint="@null"
+            android:elevation="4dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="@string/reset_run"
+            android:textAllCaps="false"
+            android:textColor="@color/start_run_button_text"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="@null"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/pauseRunButton" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -3,6 +3,7 @@
     <string name="start_run">Start Run</string>
     <string name="pause_run">Pause</string>
     <string name="resume_run">Resume</string>
+    <string name="reset_run">Reset</string>
     <string name="elapsed_time">Elapsed Time</string>
     <string name="location_waiting">Waiting for GPS</string>
     <string name="location_permission_required">Location permission required</string>
