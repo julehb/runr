@@ -1,14 +1,18 @@
 <resources>
     <string name="app_name">runr</string>
     <string name="start_run">Start Run</string>
+    <string name="pause_run">Pause</string>
+    <string name="resume_run">Resume</string>
     <string name="elapsed_time">Elapsed Time</string>
     <string name="location_waiting">Waiting for GPS</string>
     <string name="location_permission_required">Location permission required</string>
     <string name="location_coordinates_placeholder">Lat: --\nLon: --</string>
     <string name="distance_placeholder">0.00 km</string>
+    <string name="pace_placeholder">--:-- /km</string>
     <string name="location_accuracy">GPS accuracy: %.0f m</string>
     <string name="location_coordinates">Lat: %1$.5f\nLon: %2$.5f</string>
     <string name="distance_kilometers">%.2f km</string>
+    <string name="pace_minutes_per_kilometer">%1$02d:%2$02d /km</string>
     <string name="current_location_marker_title">Current location</string>
     <string name="map_attribution">&#169; OpenStreetMap contributors</string>
     <string name="simulated_run_active">Simulated run active</string>

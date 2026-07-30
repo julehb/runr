@@ -49,10 +49,33 @@
             android:textColor="@color/run_screen_primary_text"
             android:textSize="56sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/pauseRunButton"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/elapsedTimeLabel" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/pauseRunButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minWidth="132dp"
+            android:minHeight="48dp"
+            android:background="@drawable/start_run_button_background"
+            android:backgroundTint="@null"
+            android:elevation="4dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="@string/pause_run"
+            android:textAllCaps="false"
+            android:textColor="@color/start_run_button_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@null"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/elapsedTimeChronometer" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -105,6 +128,16 @@
                 android:text="@string/distance_placeholder"
                 android:textColor="@color/run_screen_primary_text"
                 android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/paceText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/pace_placeholder"
+                android:textColor="@color/run_screen_primary_text"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
         </LinearLayout>

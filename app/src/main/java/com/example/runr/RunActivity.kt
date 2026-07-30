@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,9 +24,11 @@ import org.osmdroid.views.overlay.Polyline
 
 class RunActivity : AppCompatActivity() {
     private lateinit var elapsedTimeChronometer: Chronometer
+    private lateinit var pauseRunButton: AppCompatButton
     private lateinit var locationStatusText: TextView
     private lateinit var locationCoordinatesText: TextView
     private lateinit var distanceText: TextView
+    private lateinit var paceText: TextView
     private lateinit var locationTracker: LocationTracker
     private lateinit var mapView: MapView
     private lateinit var routeLine: Polyline
@@ -33,6 +36,9 @@ class RunActivity : AppCompatActivity() {
 
     private var lastAcceptedLocation: Location? = null
     private var lastMovementBearingDegrees = 0f
+    private var isTimerRunning = false
+    private var pausedAtElapsedRealtime = 0L
+    private var shouldAnchorNextLocation = false
     private var totalDistanceMeters = 0f
     private val routePoints = mutableListOf<GeoPoint>()
     private val simulatedRunHandler = Handler(Looper.getMainLooper())
@@ -52,8 +58,7 @@ class RunActivity : AppCompatActivity() {
                     latitude = point.latitude
                     longitude = point.longitude
                     accuracy = SIMULATED_LOCATION_ACCURACY_METERS
-                    time = System.currentTimeMillis() +
-                        (simulatedRunPointIndex * SIMULATED_LOCATION_TIME_STEP_MILLIS)
+                    time = System.currentTimeMillis()
                 },
             )
             simulatedRunPointIndex += 1
@@ -80,9 +85,11 @@ class RunActivity : AppCompatActivity() {
         setContentView(R.layout.activity_run)
 
         elapsedTimeChronometer = findViewById(R.id.elapsedTimeChronometer)
+        pauseRunButton = findViewById(R.id.pauseRunButton)
         locationStatusText = findViewById(R.id.locationStatusText)
         locationCoordinatesText = findViewById(R.id.locationCoordinatesText)
         distanceText = findViewById(R.id.distanceText)
+        paceText = findViewById(R.id.paceText)
         mapView = findViewById(R.id.runMapView)
         locationTracker = LocationTracker(this, ::onLocationUpdated)
         setupMap()
@@ -98,10 +105,21 @@ class RunActivity : AppCompatActivity() {
         val chronometerBase = savedInstanceState?.getLong(KEY_CHRONOMETER_BASE)
             ?: SystemClock.elapsedRealtime()
         elapsedTimeChronometer.base = chronometerBase
-        if (IS_TIMER_ENABLED_FOR_DEVELOPMENT) {
-            elapsedTimeChronometer.start()
+        isTimerRunning = savedInstanceState?.getBoolean(KEY_IS_TIMER_RUNNING)
+            ?: IS_TIMER_ENABLED_FOR_DEVELOPMENT
+        pausedAtElapsedRealtime = savedInstanceState?.getLong(KEY_PAUSED_AT_ELAPSED_REALTIME)
+            ?: SystemClock.elapsedRealtime()
+        shouldAnchorNextLocation = savedInstanceState?.getBoolean(KEY_SHOULD_ANCHOR_NEXT_LOCATION)
+            ?: false
+        if (isTimerRunning) {
+            startTimer()
+        } else {
+            elapsedTimeChronometer.stop()
+            updatePauseButtonText()
         }
+        pauseRunButton.setOnClickListener { toggleTimer() }
         updateDistanceText()
+        updatePaceText()
     }
 
     override fun onStart() {
@@ -143,6 +161,9 @@ class RunActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong(KEY_CHRONOMETER_BASE, elapsedTimeChronometer.base)
+        outState.putBoolean(KEY_IS_TIMER_RUNNING, isTimerRunning)
+        outState.putLong(KEY_PAUSED_AT_ELAPSED_REALTIME, pausedAtElapsedRealtime)
+        outState.putBoolean(KEY_SHOULD_ANCHOR_NEXT_LOCATION, shouldAnchorNextLocation)
         outState.putFloat(KEY_TOTAL_DISTANCE_METERS, totalDistanceMeters)
         outState.putFloat(KEY_LAST_MOVEMENT_BEARING_DEGREES, lastMovementBearingDegrees)
         outState.putDoubleArray(KEY_ROUTE_LATITUDES, routePoints.map { it.latitude }.toDoubleArray())
@@ -239,6 +260,39 @@ class RunActivity : AppCompatActivity() {
         )
     }
 
+    private fun toggleTimer() {
+        if (isTimerRunning) {
+            pauseTimer()
+        } else {
+            resumeTimer()
+        }
+        updatePaceText()
+    }
+
+    private fun startTimer() {
+        elapsedTimeChronometer.start()
+        isTimerRunning = true
+        updatePauseButtonText()
+    }
+
+    private fun pauseTimer() {
+        pausedAtElapsedRealtime = SystemClock.elapsedRealtime()
+        elapsedTimeChronometer.stop()
+        isTimerRunning = false
+        shouldAnchorNextLocation = true
+        updatePauseButtonText()
+    }
+
+    private fun resumeTimer() {
+        val pausedDurationMillis = SystemClock.elapsedRealtime() - pausedAtElapsedRealtime
+        elapsedTimeChronometer.base += pausedDurationMillis
+        startTimer()
+    }
+
+    private fun updatePauseButtonText() {
+        pauseRunButton.setText(if (isTimerRunning) R.string.pause_run else R.string.resume_run)
+    }
+
     private fun hasLocationPermission(): Boolean {
         val fineLocationPermission = ContextCompat.checkSelfPermission(
             this,
@@ -255,6 +309,15 @@ class RunActivity : AppCompatActivity() {
 
     private fun onLocationUpdated(location: Location) {
         if (!location.hasAccuracy() || location.accuracy > MAX_ACCEPTED_ACCURACY_METERS) {
+            return
+        }
+
+        if (!isTimerRunning) {
+            return
+        }
+
+        if (shouldAnchorNextLocation) {
+            anchorLocationAfterPause(location)
             return
         }
 
@@ -277,7 +340,15 @@ class RunActivity : AppCompatActivity() {
         lastAcceptedLocation = location
         updateLocationText(location)
         updateDistanceText()
+        updatePaceText()
         updateMap(location, lastMovementBearingDegrees)
+    }
+
+    private fun anchorLocationAfterPause(location: Location) {
+        lastAcceptedLocation = location
+        shouldAnchorNextLocation = false
+        updateLocationText(location)
+        updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = false)
     }
 
     private fun isPlausibleRunSegment(previousLocation: Location, location: Location): Boolean {
@@ -306,11 +377,32 @@ class RunActivity : AppCompatActivity() {
         )
     }
 
-    private fun updateMap(location: Location?, movementBearingDegrees: Float) {
+    private fun updatePaceText() {
+        if (totalDistanceMeters <= 0f) {
+            paceText.setText(R.string.pace_placeholder)
+            return
+        }
+
+        val elapsedSeconds = (
+            getElapsedRunTimeMillis() / MILLIS_PER_SECOND
+            ).coerceAtLeast(1L)
+        val paceSecondsPerKilometer = (
+            elapsedSeconds / (totalDistanceMeters / METERS_PER_KILOMETER)
+            ).toInt()
+        val paceMinutes = paceSecondsPerKilometer / SECONDS_PER_MINUTE
+        val paceSeconds = paceSecondsPerKilometer % SECONDS_PER_MINUTE
+        paceText.text = getString(R.string.pace_minutes_per_kilometer, paceMinutes, paceSeconds)
+    }
+
+    private fun updateMap(
+        location: Location?,
+        movementBearingDegrees: Float,
+        shouldAddRoutePoint: Boolean = true,
+    ) {
         if (location == null) return
 
         val geoPoint = GeoPoint(location.latitude, location.longitude)
-        if (routePoints.lastOrNull() != geoPoint) {
+        if (shouldAddRoutePoint && routePoints.lastOrNull() != geoPoint) {
             routePoints.add(geoPoint)
             routeLine.setPoints(routePoints)
         }
@@ -325,8 +417,20 @@ class RunActivity : AppCompatActivity() {
         return -movementBearingDegrees
     }
 
+    private fun getElapsedRunTimeMillis(): Long {
+        val elapsedRealtime = if (isTimerRunning) {
+            SystemClock.elapsedRealtime()
+        } else {
+            pausedAtElapsedRealtime
+        }
+        return elapsedRealtime - elapsedTimeChronometer.base
+    }
+
     companion object {
         private const val KEY_CHRONOMETER_BASE = "chronometerBase"
+        private const val KEY_IS_TIMER_RUNNING = "isTimerRunning"
+        private const val KEY_PAUSED_AT_ELAPSED_REALTIME = "pausedAtElapsedRealtime"
+        private const val KEY_SHOULD_ANCHOR_NEXT_LOCATION = "shouldAnchorNextLocation"
         private const val KEY_TOTAL_DISTANCE_METERS = "totalDistanceMeters"
         private const val KEY_LAST_MOVEMENT_BEARING_DEGREES = "lastMovementBearingDegrees"
         private const val KEY_ROUTE_LATITUDES = "routeLatitudes"
@@ -341,47 +445,40 @@ class RunActivity : AppCompatActivity() {
         private const val MIN_DISTANCE_DELTA_METERS = 1f
         private const val MAX_PLAUSIBLE_RUNNING_SPEED_METERS_PER_SECOND = 12f
         private const val METERS_PER_KILOMETER = 1_000f
-        private const val IS_TIMER_ENABLED_FOR_DEVELOPMENT = false
+        private const val MILLIS_PER_SECOND = 1_000L
+        private const val SECONDS_PER_MINUTE = 60
+        private const val IS_TIMER_ENABLED_FOR_DEVELOPMENT = true
         private const val IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT = true
         private const val SIMULATED_LOCATION_PROVIDER = "simulated"
         private const val SIMULATED_LOCATION_ACCURACY_METERS = 8f
-        private const val SIMULATED_LOCATION_TIME_STEP_MILLIS = 3_000L
-        private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 750L
+        private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 15_000L
         private const val MIN_MAP_ZOOM = 3.0
         private const val MAX_MAP_ZOOM = 20.0
         private const val DEFAULT_MAP_ZOOM = 16.0
         private const val ROUTE_LINE_WIDTH = 8f
         private val DEFAULT_MAP_CENTER = GeoPoint(52.52, 13.405)
         private val SIMULATED_RUN_POINTS = listOf(
-            GeoPoint(52.52000, 13.40500),
-            GeoPoint(52.52012, 13.40518),
-            GeoPoint(52.52025, 13.40534),
-            GeoPoint(52.52039, 13.40548),
-            GeoPoint(52.52054, 13.40561),
-            GeoPoint(52.52070, 13.40570),
-            GeoPoint(52.52087, 13.40576),
-            GeoPoint(52.52104, 13.40578),
-            GeoPoint(52.52121, 13.40575),
-            GeoPoint(52.52136, 13.40567),
-            GeoPoint(52.52149, 13.40554),
-            GeoPoint(52.52159, 13.40537),
-            GeoPoint(52.52166, 13.40517),
-            GeoPoint(52.52169, 13.40495),
-            GeoPoint(52.52168, 13.40473),
-            GeoPoint(52.52163, 13.40452),
-            GeoPoint(52.52154, 13.40434),
-            GeoPoint(52.52141, 13.40420),
-            GeoPoint(52.52126, 13.40410),
-            GeoPoint(52.52109, 13.40405),
-            GeoPoint(52.52092, 13.40404),
-            GeoPoint(52.52075, 13.40408),
-            GeoPoint(52.52059, 13.40417),
-            GeoPoint(52.52045, 13.40431),
-            GeoPoint(52.52034, 13.40448),
-            GeoPoint(52.52025, 13.40467),
-            GeoPoint(52.52018, 13.40487),
-            GeoPoint(52.52010, 13.40500),
-            GeoPoint(52.52000, 13.40500),
+            GeoPoint(52.519102, 13.402786),
+            GeoPoint(52.519102, 13.403524),
+            GeoPoint(52.519102, 13.404262),
+            GeoPoint(52.519102, 13.405000),
+            GeoPoint(52.519102, 13.405738),
+            GeoPoint(52.519102, 13.406476),
+            GeoPoint(52.519102, 13.407214),
+            GeoPoint(52.519551, 13.407214),
+            GeoPoint(52.520000, 13.407214),
+            GeoPoint(52.520449, 13.407214),
+            GeoPoint(52.520898, 13.407214),
+            GeoPoint(52.520898, 13.406476),
+            GeoPoint(52.520898, 13.405738),
+            GeoPoint(52.520898, 13.405000),
+            GeoPoint(52.520898, 13.404262),
+            GeoPoint(52.520898, 13.403524),
+            GeoPoint(52.520898, 13.402786),
+            GeoPoint(52.520449, 13.402786),
+            GeoPoint(52.520000, 13.402786),
+            GeoPoint(52.519551, 13.402786),
+            GeoPoint(52.519102, 13.402786),
         )
         private val OPEN_STREET_MAP_TILE_SOURCE = XYTileSource(
             "OpenStreetMap",
