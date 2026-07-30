@@ -13,5 +13,7 @@
     <color name="run_screen_title">#FF0A4DFF</color>
     <color name="map_placeholder_background">#FFEAF2F8</color>
     <color name="map_status_overlay_background">#E6FFFFFF</color>
-    <color name="run_route_line">#F04438</color>
+    <color name="run_route_line">#0A4DFF</color>
+    <color name="current_location_marker">#0A4DFF</color>
+    <color name="current_location_marker_outline">#FFFFFFFF</color>
 </resources>
