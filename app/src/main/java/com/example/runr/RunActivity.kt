@@ -41,8 +41,6 @@ class RunActivity : AppCompatActivity() {
     private var pausedAtElapsedRealtime = 0L
     private var shouldAnchorNextLocation = false
     private var totalDistanceMeters = 0f
-    private var hasCenteredMapOnRunLocation = false
-    private var lastMapCameraMoveElapsedRealtime = 0L
     private val routePoints = mutableListOf<GeoPoint>()
     private val simulatedRunHandler = Handler(Looper.getMainLooper())
     private var simulatedRunPointIndex = 0
@@ -315,12 +313,7 @@ class RunActivity : AppCompatActivity() {
         resetSimulatedRunIfFinished()
 
         lastAcceptedLocation?.let { location ->
-            updateMap(
-                location,
-                lastMovementBearingDegrees,
-                shouldAddRoutePoint = false,
-                forceMoveCamera = true,
-            )
+            updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = false)
         } ?: mapView.invalidate()
 
         if (isTimerRunning) {
@@ -448,7 +441,6 @@ class RunActivity : AppCompatActivity() {
         location: Location?,
         movementBearingDegrees: Float,
         shouldAddRoutePoint: Boolean = true,
-        forceMoveCamera: Boolean = false,
     ) {
         if (location == null) return
 
@@ -460,24 +452,8 @@ class RunActivity : AppCompatActivity() {
 
         currentLocationMarker.position = geoPoint
         currentLocationMarker.rotation = toMarkerRotation(movementBearingDegrees)
-        if (shouldMoveMapCamera(forceMoveCamera)) {
-            mapView.controller.animateTo(geoPoint)
-        }
+        mapView.controller.animateTo(geoPoint)
         mapView.invalidate()
-    }
-
-    private fun shouldMoveMapCamera(forceMoveCamera: Boolean): Boolean {
-        val now = SystemClock.elapsedRealtime()
-        if (forceMoveCamera ||
-            !hasCenteredMapOnRunLocation ||
-            now - lastMapCameraMoveElapsedRealtime >= MAP_CAMERA_FOLLOW_INTERVAL_MILLIS
-        ) {
-            hasCenteredMapOnRunLocation = true
-            lastMapCameraMoveElapsedRealtime = now
-            return true
-        }
-
-        return false
     }
 
     private fun toMarkerRotation(movementBearingDegrees: Float): Float {
@@ -520,7 +496,6 @@ class RunActivity : AppCompatActivity() {
         private const val SIMULATED_LOCATION_ACCURACY_METERS = 8f
         private const val SIMULATED_RUN_UPDATE_INTERVAL_MILLIS = 1_000L
         private const val SIMULATED_RUN_DURATION_MILLIS = 5 * 60 * MILLIS_PER_SECOND
-        private const val MAP_CAMERA_FOLLOW_INTERVAL_MILLIS = 5_000L
         private const val MIN_MAP_ZOOM = 3.0
         private const val MAX_MAP_ZOOM = 20.0
         private const val DEFAULT_MAP_ZOOM = 16.0
