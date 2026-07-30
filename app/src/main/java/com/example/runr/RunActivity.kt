@@ -30,7 +30,8 @@ class RunActivity : AppCompatActivity() {
     private lateinit var locationStatusText: TextView
     private lateinit var locationCoordinatesText: TextView
     private lateinit var distanceText: TextView
-    private lateinit var paceText: TextView
+    private lateinit var currentPaceText: TextView
+    private lateinit var averagePaceText: TextView
     private lateinit var locationTracker: LocationTracker
     private lateinit var mapView: MapView
     private lateinit var routeLine: Polyline
@@ -39,10 +40,12 @@ class RunActivity : AppCompatActivity() {
     private var lastAcceptedLocation: Location? = null
     private var lastMovementBearingDegrees = 0f
     private var isTimerRunning = false
+    private var isRunReset = false
     private var pausedAtElapsedRealtime = 0L
     private var shouldAnchorNextLocation = false
     private var totalDistanceMeters = 0f
     private val routePoints = mutableListOf<GeoPoint>()
+    private val currentPaceSegments = ArrayDeque<PaceSegment>()
     private val simulatedRunHandler = Handler(Looper.getMainLooper())
     private var simulatedRunPointIndex = 0
     private var isSimulatedRunActive = false
@@ -98,7 +101,8 @@ class RunActivity : AppCompatActivity() {
         locationStatusText = findViewById(R.id.locationStatusText)
         locationCoordinatesText = findViewById(R.id.locationCoordinatesText)
         distanceText = findViewById(R.id.distanceText)
-        paceText = findViewById(R.id.paceText)
+        currentPaceText = findViewById(R.id.currentPaceText)
+        averagePaceText = findViewById(R.id.averagePaceText)
         mapView = findViewById(R.id.runMapView)
         locationTracker = LocationTracker(this, ::onLocationUpdated)
         setupMap()
@@ -116,6 +120,7 @@ class RunActivity : AppCompatActivity() {
         elapsedTimeChronometer.base = chronometerBase
         isTimerRunning = savedInstanceState?.getBoolean(KEY_IS_TIMER_RUNNING)
             ?: IS_TIMER_ENABLED_FOR_DEVELOPMENT
+        isRunReset = savedInstanceState?.getBoolean(KEY_IS_RUN_RESET) ?: false
         pausedAtElapsedRealtime = savedInstanceState?.getLong(KEY_PAUSED_AT_ELAPSED_REALTIME)
             ?: SystemClock.elapsedRealtime()
         shouldAnchorNextLocation = savedInstanceState?.getBoolean(KEY_SHOULD_ANCHOR_NEXT_LOCATION)
@@ -173,12 +178,21 @@ class RunActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         outState.putLong(KEY_CHRONOMETER_BASE, elapsedTimeChronometer.base)
         outState.putBoolean(KEY_IS_TIMER_RUNNING, isTimerRunning)
+        outState.putBoolean(KEY_IS_RUN_RESET, isRunReset)
         outState.putLong(KEY_PAUSED_AT_ELAPSED_REALTIME, pausedAtElapsedRealtime)
         outState.putBoolean(KEY_SHOULD_ANCHOR_NEXT_LOCATION, shouldAnchorNextLocation)
         outState.putFloat(KEY_TOTAL_DISTANCE_METERS, totalDistanceMeters)
         outState.putFloat(KEY_LAST_MOVEMENT_BEARING_DEGREES, lastMovementBearingDegrees)
         outState.putDoubleArray(KEY_ROUTE_LATITUDES, routePoints.map { it.latitude }.toDoubleArray())
         outState.putDoubleArray(KEY_ROUTE_LONGITUDES, routePoints.map { it.longitude }.toDoubleArray())
+        outState.putFloatArray(
+            KEY_CURRENT_PACE_SEGMENT_DISTANCES,
+            currentPaceSegments.map { it.distanceMeters }.toFloatArray(),
+        )
+        outState.putLongArray(
+            KEY_CURRENT_PACE_SEGMENT_DURATIONS,
+            currentPaceSegments.map { it.durationMillis }.toLongArray(),
+        )
 
         lastAcceptedLocation?.let { location ->
             outState.putBoolean(KEY_HAS_LAST_LOCATION, true)
@@ -194,6 +208,7 @@ class RunActivity : AppCompatActivity() {
 
         totalDistanceMeters = savedInstanceState.getFloat(KEY_TOTAL_DISTANCE_METERS, 0f)
         lastMovementBearingDegrees = savedInstanceState.getFloat(KEY_LAST_MOVEMENT_BEARING_DEGREES, 0f)
+        restoreCurrentPaceSegments(savedInstanceState)
         restoreRoutePoints(savedInstanceState)
         if (savedInstanceState.getBoolean(KEY_HAS_LAST_LOCATION, false)) {
             lastAcceptedLocation = Location(SAVED_LOCATION_PROVIDER).apply {
@@ -244,6 +259,17 @@ class RunActivity : AppCompatActivity() {
         routeLine.setPoints(routePoints)
     }
 
+    private fun restoreCurrentPaceSegments(savedInstanceState: Bundle) {
+        val distances = savedInstanceState.getFloatArray(KEY_CURRENT_PACE_SEGMENT_DISTANCES) ?: return
+        val durations = savedInstanceState.getLongArray(KEY_CURRENT_PACE_SEGMENT_DURATIONS) ?: return
+        val segmentCount = minOf(distances.size, durations.size)
+
+        currentPaceSegments.clear()
+        for (index in 0 until segmentCount) {
+            currentPaceSegments.addLast(PaceSegment(distances[index], durations[index]))
+        }
+    }
+
     private fun startLocationTracking() {
         locationStatusText.setText(R.string.location_waiting)
         locationTracker.start()
@@ -283,6 +309,7 @@ class RunActivity : AppCompatActivity() {
     private fun startTimer() {
         elapsedTimeChronometer.start()
         isTimerRunning = true
+        isRunReset = false
         updatePauseButtonText()
     }
 
@@ -301,14 +328,24 @@ class RunActivity : AppCompatActivity() {
     }
 
     private fun updatePauseButtonText() {
-        pauseRunButton.setText(if (isTimerRunning) R.string.pause_run else R.string.resume_run)
+        pauseRunButton.setText(
+            when {
+                isTimerRunning -> R.string.pause_run
+                isRunReset -> R.string.start_timer
+                else -> R.string.resume_run
+            },
+        )
     }
 
     private fun resetRun() {
         val resetTime = SystemClock.elapsedRealtime()
         elapsedTimeChronometer.base = resetTime
         pausedAtElapsedRealtime = resetTime
+        elapsedTimeChronometer.stop()
+        isTimerRunning = false
+        isRunReset = true
         totalDistanceMeters = 0f
+        currentPaceSegments.clear()
         shouldAnchorNextLocation = true
 
         routePoints.clear()
@@ -318,11 +355,7 @@ class RunActivity : AppCompatActivity() {
             updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = false)
         } ?: mapView.invalidate()
 
-        if (isTimerRunning) {
-            elapsedTimeChronometer.start()
-        } else {
-            elapsedTimeChronometer.stop()
-        }
+        updatePauseButtonText()
         updateDistanceText()
         updatePaceText()
     }
@@ -369,6 +402,7 @@ class RunActivity : AppCompatActivity() {
                 isPlausibleRunSegment(previousLocation, location)
             ) {
                 totalDistanceMeters += distanceToPrevious
+                addCurrentPaceSegment(distanceToPrevious, location.time - previousLocation.time)
                 lastMovementBearingDegrees = movementBearingDegrees
             }
         } else {
@@ -420,20 +454,58 @@ class RunActivity : AppCompatActivity() {
     }
 
     private fun updatePaceText() {
-        if (totalDistanceMeters <= 0f) {
-            paceText.setText(R.string.pace_placeholder)
+        updateCurrentPaceText()
+        updateAveragePaceText()
+    }
+
+    private fun updateCurrentPaceText() {
+        if (currentPaceSegments.size < MIN_PACE_SEGMENT_COUNT) {
+            currentPaceText.setText(R.string.current_pace_placeholder)
             return
         }
 
-        val elapsedSeconds = (
-            getElapsedRunTimeMillis() / MILLIS_PER_SECOND
-            ).coerceAtLeast(1L)
+        val windowDistanceMeters = currentPaceSegments.sumOf { it.distanceMeters.toDouble() }.toFloat()
+        if (windowDistanceMeters <= 0f) {
+            currentPaceText.setText(R.string.current_pace_placeholder)
+            return
+        }
+
+        val windowDurationMillis = currentPaceSegments.sumOf { it.durationMillis }
+        currentPaceText.text = getString(
+            R.string.current_pace_minutes_per_kilometer,
+            formatPace(windowDurationMillis, windowDistanceMeters),
+        )
+    }
+
+    private fun updateAveragePaceText() {
+        if (currentPaceSegments.size < MIN_PACE_SEGMENT_COUNT || totalDistanceMeters <= 0f) {
+            averagePaceText.setText(R.string.average_pace_placeholder)
+            return
+        }
+
+        averagePaceText.text = getString(
+            R.string.average_pace_minutes_per_kilometer,
+            formatPace(getElapsedRunTimeMillis(), totalDistanceMeters),
+        )
+    }
+
+    private fun addCurrentPaceSegment(distanceMeters: Float, durationMillis: Long) {
+        if (durationMillis <= 0L) return
+
+        currentPaceSegments.addLast(PaceSegment(distanceMeters, durationMillis))
+        while (currentPaceSegments.size > CURRENT_PACE_SEGMENT_COUNT) {
+            currentPaceSegments.removeFirst()
+        }
+    }
+
+    private fun formatPace(durationMillis: Long, distanceMeters: Float): String {
+        val elapsedSeconds = (durationMillis / MILLIS_PER_SECOND).coerceAtLeast(1L)
         val paceSecondsPerKilometer = (
-            elapsedSeconds / (totalDistanceMeters / METERS_PER_KILOMETER)
+            elapsedSeconds / (distanceMeters / METERS_PER_KILOMETER)
             ).toInt()
         val paceMinutes = paceSecondsPerKilometer / SECONDS_PER_MINUTE
         val paceSeconds = paceSecondsPerKilometer % SECONDS_PER_MINUTE
-        paceText.text = getString(R.string.pace_minutes_per_kilometer, paceMinutes, paceSeconds)
+        return getString(R.string.pace_minutes_per_kilometer, paceMinutes, paceSeconds)
     }
 
     private fun updateMap(
@@ -468,12 +540,20 @@ class RunActivity : AppCompatActivity() {
         return elapsedRealtime - elapsedTimeChronometer.base
     }
 
+    private data class PaceSegment(
+        val distanceMeters: Float,
+        val durationMillis: Long,
+    )
+
     companion object {
         private const val KEY_CHRONOMETER_BASE = "chronometerBase"
         private const val KEY_IS_TIMER_RUNNING = "isTimerRunning"
+        private const val KEY_IS_RUN_RESET = "isRunReset"
         private const val KEY_PAUSED_AT_ELAPSED_REALTIME = "pausedAtElapsedRealtime"
         private const val KEY_SHOULD_ANCHOR_NEXT_LOCATION = "shouldAnchorNextLocation"
         private const val KEY_TOTAL_DISTANCE_METERS = "totalDistanceMeters"
+        private const val KEY_CURRENT_PACE_SEGMENT_DISTANCES = "currentPaceSegmentDistances"
+        private const val KEY_CURRENT_PACE_SEGMENT_DURATIONS = "currentPaceSegmentDurations"
         private const val KEY_LAST_MOVEMENT_BEARING_DEGREES = "lastMovementBearingDegrees"
         private const val KEY_ROUTE_LATITUDES = "routeLatitudes"
         private const val KEY_ROUTE_LONGITUDES = "routeLongitudes"
@@ -489,6 +569,8 @@ class RunActivity : AppCompatActivity() {
         private const val METERS_PER_KILOMETER = 1_000f
         private const val MILLIS_PER_SECOND = 1_000L
         private const val SECONDS_PER_MINUTE = 60
+        private const val MIN_PACE_SEGMENT_COUNT = 10
+        private const val CURRENT_PACE_SEGMENT_COUNT = 10
         private const val IS_TIMER_ENABLED_FOR_DEVELOPMENT = true
         private const val IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT = true
         private const val SIMULATED_LOCATION_PROVIDER = "simulated"
