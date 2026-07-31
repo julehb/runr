@@ -177,15 +177,39 @@
                 android:orientation="vertical"
                 android:padding="14dp">
 
-                <TextView
-                    android:id="@+id/paceLabelText"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/pace_label"
-                    android:textColor="@color/run_screen_secondary_text"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/paceLabelText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/pace_label"
+                        android:textColor="@color/run_screen_secondary_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/paceUnitToggleButton"
+                        android:layout_width="48dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:background="@drawable/pace_unit_toggle_background"
+                        android:backgroundTint="@null"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:text="@string/pace_unit_pace"
+                        android:textAllCaps="false"
+                        android:textColor="@color/run_screen_primary_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@null" />
+
+                </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/paceValuesContainer"

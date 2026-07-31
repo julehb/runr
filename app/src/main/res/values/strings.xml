@@ -10,12 +10,16 @@
     <string name="pace_label">Pace</string>
     <string name="current_pace_label">Current</string>
     <string name="average_pace_label">Average</string>
+    <string name="pace_unit_pace">/km</string>
+    <string name="pace_unit_speed">m/s</string>
     <string name="distance_placeholder">0 m</string>
     <string name="current_pace_placeholder">--:-- /km</string>
     <string name="average_pace_placeholder">--:-- /km</string>
+    <string name="speed_placeholder">-- m/s</string>
     <string name="distance_kilometers">%.2f km</string>
     <string name="distance_meters">%d m</string>
     <string name="pace_minutes_per_kilometer">%1$02d:%2$02d /km</string>
+    <string name="speed_meters_per_second">%.2f m/s</string>
     <string name="current_pace_minutes_per_kilometer">%s</string>
     <string name="average_pace_minutes_per_kilometer">%s</string>
     <string name="current_location_marker_title">Current location</string>
