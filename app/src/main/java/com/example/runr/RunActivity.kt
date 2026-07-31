@@ -27,8 +27,6 @@ class RunActivity : AppCompatActivity() {
     private lateinit var pauseRunButton: AppCompatButton
     private lateinit var resetRunButton: AppCompatButton
     private lateinit var stopRunButton: AppCompatButton
-    private lateinit var locationStatusText: TextView
-    private lateinit var locationCoordinatesText: TextView
     private lateinit var distanceText: TextView
     private lateinit var currentPaceText: TextView
     private lateinit var averagePaceText: TextView
@@ -84,8 +82,6 @@ class RunActivity : AppCompatActivity() {
 
         if (hasLocationPermission) {
             startLocationTracking()
-        } else {
-            locationStatusText.setText(R.string.location_permission_required)
         }
     }
 
@@ -98,8 +94,6 @@ class RunActivity : AppCompatActivity() {
         pauseRunButton = findViewById(R.id.pauseRunButton)
         resetRunButton = findViewById(R.id.resetRunButton)
         stopRunButton = findViewById(R.id.stopRunButton)
-        locationStatusText = findViewById(R.id.locationStatusText)
-        locationCoordinatesText = findViewById(R.id.locationCoordinatesText)
         distanceText = findViewById(R.id.distanceText)
         currentPaceText = findViewById(R.id.currentPaceText)
         averagePaceText = findViewById(R.id.averagePaceText)
@@ -217,7 +211,6 @@ class RunActivity : AppCompatActivity() {
                 accuracy = savedInstanceState.getFloat(KEY_LAST_ACCURACY)
                 time = savedInstanceState.getLong(KEY_LAST_LOCATION_TIME)
             }
-            updateLocationText(lastAcceptedLocation)
             updateMap(lastAcceptedLocation, lastMovementBearingDegrees)
         }
     }
@@ -271,14 +264,12 @@ class RunActivity : AppCompatActivity() {
     }
 
     private fun startLocationTracking() {
-        locationStatusText.setText(R.string.location_waiting)
         locationTracker.start()
     }
 
     private fun startSimulatedRun() {
         if (isSimulatedRunActive) return
 
-        locationStatusText.setText(R.string.simulated_run_active)
         isSimulatedRunActive = true
         simulatedRunHandler.post(simulatedRunStep)
     }
@@ -410,7 +401,6 @@ class RunActivity : AppCompatActivity() {
         }
 
         lastAcceptedLocation = location
-        updateLocationText(location)
         updateDistanceText()
         updatePaceText()
         updateMap(location, lastMovementBearingDegrees)
@@ -419,7 +409,6 @@ class RunActivity : AppCompatActivity() {
     private fun anchorLocationAfterPause(location: Location) {
         lastAcceptedLocation = location
         shouldAnchorNextLocation = false
-        updateLocationText(location)
         updateMap(location, lastMovementBearingDegrees, shouldAddRoutePoint = routePoints.isEmpty())
     }
 
@@ -429,17 +418,6 @@ class RunActivity : AppCompatActivity() {
 
         val speedMetersPerSecond = previousLocation.distanceTo(location) / elapsedSeconds
         return speedMetersPerSecond <= MAX_PLAUSIBLE_RUNNING_SPEED_METERS_PER_SECOND
-    }
-
-    private fun updateLocationText(location: Location?) {
-        if (location == null) return
-
-        locationStatusText.text = getString(R.string.location_accuracy, location.accuracy)
-        locationCoordinatesText.text = getString(
-            R.string.location_coordinates,
-            location.latitude,
-            location.longitude,
-        )
     }
 
     private fun updateDistanceText() {

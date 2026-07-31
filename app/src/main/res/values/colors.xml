@@ -10,6 +10,7 @@
     <color name="run_screen_background">#FFFFFFFF</color>
     <color name="run_screen_primary_text">#FF000000</color>
     <color name="run_screen_secondary_text">#FF667085</color>
+    <color name="run_stat_tile_background">#FFF2F4F7</color>
     <color name="run_screen_title">#FF0A4DFF</color>
     <color name="map_placeholder_background">#FFEAF2F8</color>
     <color name="map_status_overlay_background">#E6FFFFFF</color>
