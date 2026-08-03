@@ -4,6 +4,8 @@
 
 TODO:
 Lauf-History
+Zurück-Button
+
 Berechtigungen
 Foreground Service/GPS-Tracking im Hintergrund
 Coroutines
