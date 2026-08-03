@@ -6,4 +6,19 @@
     </style>
 
     <style name="Theme.runr" parent="Base.Theme.runr" />
+
+    <style name="Widget.Runr.PrimaryButton" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/timer_button_background</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:elevation">4dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/timer_button_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="backgroundTint">@null</item>
+    </style>
 </resources>
