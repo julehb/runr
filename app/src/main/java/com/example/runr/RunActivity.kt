@@ -120,9 +120,12 @@ class RunActivity : AppCompatActivity() {
         val chronometerBase = savedInstanceState?.getLong(KEY_CHRONOMETER_BASE)
             ?: SystemClock.elapsedRealtime()
         elapsedTimeChronometer.base = chronometerBase
-        isTimerRunning = savedInstanceState?.getBoolean(KEY_IS_TIMER_RUNNING)
-            ?: IS_TIMER_ENABLED_FOR_DEVELOPMENT
-        isRunReset = savedInstanceState?.getBoolean(KEY_IS_RUN_RESET) ?: false
+        val shouldStartTimer = intent.getBooleanExtra(
+            EXTRA_SHOULD_START_TIMER,
+            IS_TIMER_ENABLED_FOR_DEVELOPMENT,
+        )
+        isTimerRunning = savedInstanceState?.getBoolean(KEY_IS_TIMER_RUNNING) ?: shouldStartTimer
+        isRunReset = savedInstanceState?.getBoolean(KEY_IS_RUN_RESET) ?: !shouldStartTimer
         isSpeedDisplayMode = savedInstanceState?.getBoolean(KEY_IS_SPEED_DISPLAY_MODE) ?: true
         pausedAtElapsedRealtime = savedInstanceState?.getLong(KEY_PAUSED_AT_ELAPSED_REALTIME)
             ?: SystemClock.elapsedRealtime()
@@ -603,6 +606,7 @@ class RunActivity : AppCompatActivity() {
         private const val KEY_LAST_LONGITUDE = "lastLongitude"
         private const val KEY_LAST_ACCURACY = "lastAccuracy"
         private const val KEY_LAST_LOCATION_TIME = "lastLocationTime"
+        const val EXTRA_SHOULD_START_TIMER = "com.example.runr.EXTRA_SHOULD_START_TIMER"
         private const val SAVED_LOCATION_PROVIDER = "saved"
         private const val MAX_ACCEPTED_ACCURACY_METERS = 50f
         private const val MIN_DISTANCE_DELTA_METERS = 1f

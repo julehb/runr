@@ -1,10 +1,12 @@
 package com.example.runr
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,6 +29,15 @@ class RunHistoryActivity : AppCompatActivity() {
         }
 
         runHistoryStore = RunHistoryStore(this)
+        findViewById<AppCompatButton>(R.id.newRunButton).setOnClickListener {
+            startActivity(
+                Intent(this, RunActivity::class.java).putExtra(
+                    RunActivity.EXTRA_SHOULD_START_TIMER,
+                    false,
+                ),
+            )
+            finish()
+        }
         historyRecyclerView = findViewById(R.id.historyRecyclerView)
         emptyHistoryText = findViewById(R.id.emptyHistoryText)
 

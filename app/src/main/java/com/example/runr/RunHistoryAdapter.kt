@@ -28,14 +28,18 @@ class RunHistoryAdapter(
     class RunHistoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val dateText: TextView = itemView.findViewById(R.id.historyRunDateText)
         private val distanceText: TextView = itemView.findViewById(R.id.historyRunDistanceText)
-        private val detailsText: TextView = itemView.findViewById(R.id.historyRunDetailsText)
+        private val durationText: TextView = itemView.findViewById(R.id.historyRunDurationText)
+        private val averagePaceText: TextView = itemView.findViewById(R.id.historyRunAveragePaceText)
 
         fun bind(entry: RunHistoryEntry) {
             dateText.text = formatDate(entry.finishedAtMillis)
             distanceText.text = formatDistance(entry.distanceMeters)
-            detailsText.text = itemView.context.getString(
-                R.string.history_run_details,
+            durationText.text = itemView.context.getString(
+                R.string.history_run_duration,
                 formatDuration(entry.durationMillis),
+            )
+            averagePaceText.text = itemView.context.getString(
+                R.string.history_run_average_pace,
                 formatAveragePace(entry.durationMillis, entry.distanceMeters),
             )
         }

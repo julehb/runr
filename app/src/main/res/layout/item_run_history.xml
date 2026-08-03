@@ -28,10 +28,18 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/historyRunDetailsText"
+        android:id="@+id/historyRunDurationText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:textColor="@color/run_screen_primary_text"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/historyRunAveragePaceText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:textColor="@color/run_screen_primary_text"
         android:textSize="15sp" />
 

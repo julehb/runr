@@ -1,40 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/runHistoryRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/run_screen_background"
-    android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp">
+    android:background="@color/run_screen_background">
 
-    <TextView
-        android:id="@+id/runHistoryTitle"
+    <LinearLayout
+        android:id="@+id/runHistoryContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <TextView
+            android:id="@+id/runHistoryTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/run_history_title"
+            android:textColor="@color/run_screen_primary_text"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/emptyHistoryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/run_history_empty"
+            android:textColor="@color/run_screen_secondary_text"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/historyRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="20dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="104dp" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/newRunOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
-        android:text="@string/run_history_title"
-        android:textColor="@color/run_screen_primary_text"
-        android:textSize="32sp"
-        android:textStyle="bold" />
+        android:layout_gravity="bottom"
+        android:background="@color/run_screen_background"
+        android:paddingStart="24dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
 
-    <TextView
-        android:id="@+id/emptyHistoryText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/run_history_empty"
-        android:textColor="@color/run_screen_secondary_text"
-        android:textSize="16sp"
-        android:visibility="gone" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/newRunButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:background="@drawable/timer_button_background"
+            android:backgroundTint="@null"
+            android:minHeight="44dp"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:drawableStart="@drawable/ic_arrow_back"
+            android:drawablePadding="8dp"
+            android:text="@string/new_run"
+            android:textAllCaps="false"
+            android:textColor="@color/timer_button_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/historyRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="20dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="24dp" />
+    </FrameLayout>
 
-</LinearLayout>
+</FrameLayout>
