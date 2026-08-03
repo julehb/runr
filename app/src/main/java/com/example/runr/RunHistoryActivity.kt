@@ -47,6 +47,16 @@ class RunHistoryActivity : AppCompatActivity() {
     private fun renderHistory(entries: List<RunHistoryEntry>) {
         emptyHistoryText.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
         historyRecyclerView.layoutManager = LinearLayoutManager(this)
-        historyRecyclerView.adapter = RunHistoryAdapter(entries)
+        historyRecyclerView.adapter = RunHistoryAdapter(
+            entries = entries,
+            onDeleteRun = { entry ->
+                runHistoryStore.deleteRun(entry.id)
+                emptyHistoryText.visibility = if (runHistoryStore.getRuns().isEmpty()) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
+            },
+        )
     }
 }

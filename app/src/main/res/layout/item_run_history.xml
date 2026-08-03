@@ -43,4 +43,21 @@
         android:textColor="@color/run_screen_primary_text"
         android:textSize="15sp" />
 
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/deleteRunButton"
+        android:layout_width="36dp"
+        android:layout_height="32dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/timer_button_background"
+        android:backgroundTint="@null"
+        android:drawableTop="@drawable/ic_delete"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:padding="6dp"
+        android:textAllCaps="false"
+        android:textColor="@color/timer_button_text"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
 </LinearLayout>

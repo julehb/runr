@@ -21,7 +21,7 @@ class RunHistoryStore(context: Context) {
             durationMillis = durationMillis,
             distanceMeters = distanceMeters,
         )
-        val entries = listOf(entry) + getRuns()
+        val entries = (listOf(entry) + getRuns()).take(MAX_RUN_HISTORY_SIZE)
         preferences.edit()
             .putString(KEY_RUNS, entries.toJsonArray().toString())
             .apply()
@@ -34,6 +34,13 @@ class RunHistoryStore(context: Context) {
         return (0 until runs.length()).mapNotNull { index ->
             runs.optJSONObject(index)?.toRunHistoryEntry()
         }
+    }
+
+    fun deleteRun(id: Long) {
+        val entries = getRuns().filterNot { entry -> entry.id == id }
+        preferences.edit()
+            .putString(KEY_RUNS, entries.toJsonArray().toString())
+            .apply()
     }
 
     private fun List<RunHistoryEntry>.toJsonArray(): JSONArray {
@@ -66,6 +73,7 @@ class RunHistoryStore(context: Context) {
     private companion object {
         private const val PREFERENCES_NAME = "run_history"
         private const val KEY_RUNS = "runs"
+        private const val MAX_RUN_HISTORY_SIZE = 10
         private const val FIELD_ID = "id"
         private const val FIELD_FINISHED_AT_MILLIS = "finishedAtMillis"
         private const val FIELD_DURATION_MILLIS = "durationMillis"

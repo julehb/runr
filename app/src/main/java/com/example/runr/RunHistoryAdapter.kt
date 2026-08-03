@@ -4,19 +4,32 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatButton
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class RunHistoryAdapter(
-    private val entries: List<RunHistoryEntry>,
+    entries: List<RunHistoryEntry>,
+    private val onDeleteRun: (RunHistoryEntry) -> Unit,
 ) : RecyclerView.Adapter<RunHistoryAdapter.RunHistoryViewHolder>() {
+    private val entries = entries.toMutableList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RunHistoryViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_run_history, parent, false)
-        return RunHistoryViewHolder(view)
+        return RunHistoryViewHolder(
+            itemView = view,
+            onDeleteRun = { entry ->
+                val position = entries.indexOfFirst { it.id == entry.id }
+                if (position != RecyclerView.NO_POSITION) {
+                    entries.removeAt(position)
+                    notifyItemRemoved(position)
+                    onDeleteRun(entry)
+                }
+            },
+        )
     }
 
     override fun onBindViewHolder(holder: RunHistoryViewHolder, position: Int) {
@@ -25,8 +38,12 @@ class RunHistoryAdapter(
 
     override fun getItemCount(): Int = entries.size
 
-    class RunHistoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class RunHistoryViewHolder(
+        itemView: View,
+        private val onDeleteRun: (RunHistoryEntry) -> Unit,
+    ) : RecyclerView.ViewHolder(itemView) {
         private val dateText: TextView = itemView.findViewById(R.id.historyRunDateText)
+        private val deleteButton: AppCompatButton = itemView.findViewById(R.id.deleteRunButton)
         private val distanceText: TextView = itemView.findViewById(R.id.historyRunDistanceText)
         private val durationText: TextView = itemView.findViewById(R.id.historyRunDurationText)
         private val averagePaceText: TextView = itemView.findViewById(R.id.historyRunAveragePaceText)
@@ -42,6 +59,7 @@ class RunHistoryAdapter(
                 R.string.history_run_average_pace,
                 formatAveragePace(entry.durationMillis, entry.distanceMeters),
             )
+            deleteButton.setOnClickListener { onDeleteRun(entry) }
         }
 
         private fun formatDate(timestampMillis: Long): String {
