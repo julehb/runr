@@ -6,7 +6,7 @@
     <string name="resume_run">Resume</string>
     <string name="reset_run">Reset</string>
     <string name="stop_run">Stop</string>
-    <string name="distance_label">Distanz</string>
+    <string name="distance_label">Distance</string>
     <string name="pace_label">Pace</string>
     <string name="current_pace_label">Current</string>
     <string name="average_pace_label">Average</string>

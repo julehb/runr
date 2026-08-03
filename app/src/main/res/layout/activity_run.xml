@@ -141,7 +141,7 @@
                     android:id="@+id/distanceLabelText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
+                    android:gravity="start"
                     android:text="@string/distance_label"
                     android:textColor="@color/run_screen_secondary_text"
                     android:textSize="13sp"
@@ -177,39 +177,50 @@
                 android:orientation="vertical"
                 android:padding="14dp">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/paceLabelText"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:gravity="start"
                         android:text="@string/pace_label"
                         android:textColor="@color/run_screen_secondary_text"
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
-                    <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/paceUnitToggleButton"
-                        android:layout_width="48dp"
-                        android:layout_height="28dp"
-                        android:layout_gravity="end|center_vertical"
-                        android:background="@drawable/pace_unit_toggle_background"
-                        android:backgroundTint="@null"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp"
-                        android:paddingStart="6dp"
-                        android:paddingEnd="6dp"
-                        android:text="@string/pace_unit_pace"
-                        android:textAllCaps="false"
-                        android:textColor="@color/run_screen_primary_text"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        app:backgroundTint="@null" />
+                    <FrameLayout
+                        android:id="@+id/paceUnitToggleTrack"
+                        android:layout_width="68dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/pace_unit_toggle_track_background"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:minWidth="68dp"
+                        android:minHeight="32dp"
+                        android:padding="3dp">
 
-                </FrameLayout>
+                        <TextView
+                            android:id="@+id/paceUnitToggleKnob"
+                            android:layout_width="38dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="start|center_vertical"
+                            android:background="@drawable/pace_unit_toggle_knob_background"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:text="@string/pace_unit_pace"
+                            android:textColor="@color/run_screen_primary_text"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/paceValuesContainer"
