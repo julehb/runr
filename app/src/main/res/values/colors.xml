@@ -7,6 +7,9 @@
     <color name="start_run_button">#FFFFFFFF</color>
     <color name="start_run_button_pressed">#FFE7ECF3</color>
     <color name="start_run_button_text">#FF000000</color>
+    <color name="timer_button">#FF91488A</color>
+    <color name="timer_button_pressed">#FF7B3D75</color>
+    <color name="timer_button_text">#FFFFFFFF</color>
     <color name="run_screen_background">#FFFFFFFF</color>
     <color name="run_screen_primary_text">#FF000000</color>
     <color name="run_screen_secondary_text">#FF667085</color>

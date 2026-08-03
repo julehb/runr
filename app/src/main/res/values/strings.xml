@@ -10,7 +10,7 @@
     <string name="pace_label">Pace</string>
     <string name="current_pace_label">Current</string>
     <string name="average_pace_label">Average</string>
-    <string name="pace_unit_pace">/km</string>
+    <string name="pace_unit_pace">min/km</string>
     <string name="pace_unit_speed">m/s</string>
     <string name="distance_placeholder">0 m</string>
     <string name="current_pace_placeholder">--:-- /km</string>
