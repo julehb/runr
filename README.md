@@ -3,7 +3,7 @@
 -- WIP --
 
 TODO:
-History
+Lauf-History
 Berechtigungen
 Foreground Service/GPS-Tracking im Hintergrund
 Coroutines

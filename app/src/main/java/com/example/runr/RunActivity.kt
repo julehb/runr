@@ -1,6 +1,7 @@
 package com.example.runr
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
@@ -364,7 +365,18 @@ class RunActivity : AppCompatActivity() {
     }
 
     private fun stopRun() {
-        toggleTimer()
+        if (isTimerRunning) {
+            pausedAtElapsedRealtime = SystemClock.elapsedRealtime()
+            elapsedTimeChronometer.stop()
+            isTimerRunning = false
+        }
+
+        RunHistoryStore(this).addRun(
+            durationMillis = getElapsedRunTimeMillis(),
+            distanceMeters = totalDistanceMeters,
+        )
+        startActivity(Intent(this, RunHistoryActivity::class.java))
+        finish()
     }
 
     private fun togglePaceDisplayMode() {

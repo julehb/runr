@@ -24,4 +24,9 @@
     <string name="average_pace_minutes_per_kilometer">%s</string>
     <string name="current_location_marker_title">Current location</string>
     <string name="map_attribution">&#169; OpenStreetMap contributors</string>
+    <string name="run_history_title">Run History</string>
+    <string name="run_history_empty">No runs yet.</string>
+    <string name="history_run_details">Time %1$s   Avg %2$s</string>
+    <string name="history_duration_minutes">%1$02d:%2$02d</string>
+    <string name="history_duration_hours">%1$d:%2$02d:%3$02d</string>
 </resources>
