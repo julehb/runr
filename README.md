@@ -2,14 +2,8 @@
 
 -- WIP --
 
-DONE:
-Location-Tracking
-Map
-Distanz
-Pace
-Pause/Reset/Stop
-
 TODO:
+History
 Berechtigungen
 Foreground Service/GPS-Tracking im Hintergrund
 Coroutines

@@ -7,7 +7,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.Gravity
 import android.widget.Chronometer
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +32,7 @@ class RunActivity : AppCompatActivity() {
     private lateinit var distanceText: TextView
     private lateinit var currentPaceText: TextView
     private lateinit var averagePaceText: TextView
+    private lateinit var paceUnitToggleTrack: FrameLayout
     private lateinit var paceUnitToggleButton: AppCompatButton
     private lateinit var locationTracker: LocationTracker
     private lateinit var mapView: MapView
@@ -99,6 +102,7 @@ class RunActivity : AppCompatActivity() {
         distanceText = findViewById(R.id.distanceText)
         currentPaceText = findViewById(R.id.currentPaceText)
         averagePaceText = findViewById(R.id.averagePaceText)
+        paceUnitToggleTrack = findViewById(R.id.paceUnitToggleTrack)
         paceUnitToggleButton = findViewById(R.id.paceUnitToggleButton)
         mapView = findViewById(R.id.runMapView)
         locationTracker = LocationTracker(this, ::onLocationUpdated)
@@ -118,7 +122,7 @@ class RunActivity : AppCompatActivity() {
         isTimerRunning = savedInstanceState?.getBoolean(KEY_IS_TIMER_RUNNING)
             ?: IS_TIMER_ENABLED_FOR_DEVELOPMENT
         isRunReset = savedInstanceState?.getBoolean(KEY_IS_RUN_RESET) ?: false
-        isSpeedDisplayMode = savedInstanceState?.getBoolean(KEY_IS_SPEED_DISPLAY_MODE) ?: false
+        isSpeedDisplayMode = savedInstanceState?.getBoolean(KEY_IS_SPEED_DISPLAY_MODE) ?: true
         pausedAtElapsedRealtime = savedInstanceState?.getLong(KEY_PAUSED_AT_ELAPSED_REALTIME)
             ?: SystemClock.elapsedRealtime()
         shouldAnchorNextLocation = savedInstanceState?.getBoolean(KEY_SHOULD_ANCHOR_NEXT_LOCATION)
@@ -132,6 +136,7 @@ class RunActivity : AppCompatActivity() {
         pauseRunButton.setOnClickListener { toggleTimer() }
         resetRunButton.setOnClickListener { resetRun() }
         stopRunButton.setOnClickListener { stopRun() }
+        paceUnitToggleTrack.setOnClickListener { togglePaceDisplayMode() }
         paceUnitToggleButton.setOnClickListener { togglePaceDisplayMode() }
         updateDistanceText()
         updatePaceUnitToggleButtonText()
@@ -372,6 +377,13 @@ class RunActivity : AppCompatActivity() {
         paceUnitToggleButton.setText(
             if (isSpeedDisplayMode) R.string.pace_unit_speed else R.string.pace_unit_pace,
         )
+        val layoutParams = paceUnitToggleButton.layoutParams as FrameLayout.LayoutParams
+        layoutParams.gravity = if (isSpeedDisplayMode) {
+            Gravity.START or Gravity.CENTER_VERTICAL
+        } else {
+            Gravity.END or Gravity.CENTER_VERTICAL
+        }
+        paceUnitToggleButton.layoutParams = layoutParams
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -586,8 +598,8 @@ class RunActivity : AppCompatActivity() {
         private const val METERS_PER_KILOMETER = 1_000f
         private const val MILLIS_PER_SECOND = 1_000L
         private const val SECONDS_PER_MINUTE = 60
-        private const val MIN_PACE_SEGMENT_COUNT = 10
-        private const val CURRENT_PACE_SEGMENT_COUNT = 10
+        private const val MIN_PACE_SEGMENT_COUNT = 5
+        private const val CURRENT_PACE_SEGMENT_COUNT = 5
         private const val IS_TIMER_ENABLED_FOR_DEVELOPMENT = true
         private const val IS_RUN_SIMULATION_ENABLED_FOR_DEVELOPMENT = true
         private const val SIMULATED_LOCATION_PROVIDER = "simulated"

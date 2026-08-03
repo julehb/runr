@@ -194,23 +194,35 @@
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
-                    <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/paceUnitToggleButton"
-                        android:layout_width="48dp"
-                        android:layout_height="28dp"
+                    <FrameLayout
+                        android:id="@+id/paceUnitToggleTrack"
+                        android:layout_width="68dp"
+                        android:layout_height="32dp"
                         android:layout_gravity="end|center_vertical"
-                        android:background="@drawable/pace_unit_toggle_background"
-                        android:backgroundTint="@null"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp"
-                        android:paddingStart="6dp"
-                        android:paddingEnd="6dp"
-                        android:text="@string/pace_unit_pace"
-                        android:textAllCaps="false"
-                        android:textColor="@color/timer_button_text"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        app:backgroundTint="@null" />
+                        android:background="@drawable/pace_unit_toggle_track_background"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="2dp">
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/paceUnitToggleButton"
+                            android:layout_width="48dp"
+                            android:layout_height="28dp"
+                            android:layout_gravity="start|center_vertical"
+                            android:background="@drawable/pace_unit_toggle_background"
+                            android:backgroundTint="@null"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:text="@string/pace_unit_pace"
+                            android:textAllCaps="false"
+                            android:textColor="@color/timer_button_text"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@null" />
+
+                    </FrameLayout>
 
                 </LinearLayout>
 
